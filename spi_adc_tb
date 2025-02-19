@@ -1,0 +1,40 @@
+module spi_adc(
+input clk,
+input reset,
+input start,
+input [2:0] channel,
+output reg cs,
+output reg sclk, 
+output reg mosi, 
+input miso,
+output reg [9:0] adc_data 
+);
+
+reg [15:0] shift_reg;
+reg [3:0] bit_count;
+
+always @(posedge clk or posedge reset) begin
+if (reset) begin
+cs<=1;
+sclk<=0;
+shift_reg<=16'b1100000000000000;
+adc_data<=10'd0;
+bit_count<=0;
+end 
+else if (start) begin
+cs<=0;
+if(bit_count<16) begin
+sclk<=~sclk;
+if(~sclk) begin
+shift_reg<={shift_reg[14:0], miso};
+bit_count<=bit_count+1;
+end
+end
+else begin
+cs<=1;
+adc_data<=shift_reg[9:0];
+bit_count<=0;
+end
+end
+end
+endmodule  
