@@ -1,0 +1,51 @@
+module uart_tx_tb;
+    reg clk;
+    reg reset;
+    reg [7:0] data_in;
+    reg send;
+    wire tx;
+
+    // Instantiate UART Transmitter
+    uart_tx uut (
+        .clk(clk),
+        .reset(reset),
+        .data_in(data_in),
+        .send(send),
+        .tx(tx)
+    );
+
+    // Generate 50MHz Clock
+    always #10 clk = ~clk;  // 20 ns period
+
+    initial begin
+        // Initialize signals
+        clk = 0;
+        reset = 1;
+        send = 0;
+        data_in = 8'b00000000;
+
+        #50 reset = 0;  // Release reset
+
+        // Send test data
+        #100 data_in = 8'b10101010; send = 1;  // Send 0xAA
+        #20 send = 0;  // Remove send signal
+
+        #104000; // Wait for UART transmission completion (~10 bits at 9600 baud)
+
+        #100 data_in = 8'b11001100; send = 1;  // Send 0xCC
+        #20 send = 0;
+
+        #104000; // Wait for next transmission
+
+        #100 data_in = 8'b11110000; send = 1;  // Send 0xF0
+        #20 send = 0;
+
+        #104000; // Wait for completion
+        #200;
+    end
+
+    // Monitor TX output
+    initial begin
+        $monitor("Time = %0t | Data_in = %b | TX = %b", $time, data_in, tx);
+    end
+endmodule 
