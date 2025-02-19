@@ -1,0 +1,66 @@
+module spi_adc_tb;
+    reg clk;
+    reg reset;
+    reg start;
+    reg miso;
+    reg [2:0] channel;
+    wire cs;
+    wire sclk;
+    wire mosi;
+    wire [9:0] adc_data;
+
+    // Instantiate the SPI ADC module
+    spi_adc uut (
+        .clk(clk),
+        .reset(reset),
+        .start(start),
+        .channel(channel),
+        .cs(cs),
+        .sclk(sclk),
+        .mosi(mosi),
+        .miso(miso),
+        .adc_data(adc_data)
+    );
+
+    // Clock generation (50MHz)
+    always #10 clk = ~clk;
+
+    // Simulated ADC response (MISO)
+    always @(posedge sclk) begin
+        if (!cs) begin
+            // Simulating a 10-bit ADC output (example: 10'b1011010110 = decimal 726)
+            miso <= (shift_data[15]); 
+            shift_data <= {shift_data[14:0], 1'b0}; // Shift left
+        end
+    end
+
+    reg [15:0] shift_data;
+
+    initial begin
+        // Initialize signals
+        clk = 0;
+        reset = 1;
+        start = 0;
+        miso = 0;
+        channel = 3'b000; // Channel 0 (Voltage)
+
+        shift_data = 16'b1011010110000000; // Preload ADC response
+
+        #50;
+        reset = 0; // Release reset
+        #50;
+        start = 1; // Start ADC conversion
+        #500;
+        start = 0;
+
+        #2000; // Wait for data collection
+        $finish;
+    end
+
+    // Monitor values
+    initial begin
+        $monitor("Time=%0t | CS=%b | SCLK=%b | MOSI=%b | MISO=%b | ADC Data=%d",
+                 $time, cs, sclk, mosi, miso, adc_data);
+    end
+
+endmodule 
