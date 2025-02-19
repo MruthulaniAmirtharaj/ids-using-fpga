@@ -1,0 +1,46 @@
+module intrusion_detection (
+    input clk,
+    input reset,
+    input miso,         // SPI Data from ADC
+    input relay_status, // Digital Input (Relay)
+    output cs,          // ADC Chip Select
+    output sclk,        // SPI Clock
+    output mosi,        // SPI Data
+    output tx           // UART Output
+);
+    wire [9:0] voltage_raw, current_raw;
+    wire [9:0] voltage_filtered, current_filtered;
+    reg [7:0] uart_data;
+    reg send_uart;
+
+    // ADC Instances
+    spi_adc adc_voltage (
+        .clk(clk), .reset(reset), .start(1'b1), .channel(3'b000), 
+        .cs(cs), .sclk(sclk), .mosi(mosi), .miso(miso), .adc_data(voltage_raw)
+    );
+
+    spi_adc adc_current (
+        .clk(clk), .reset(reset), .start(1'b1), .channel(3'b001), 
+        .cs(cs), .sclk(sclk), .mosi(mosi), .miso(miso), .adc_data(current_raw)
+    );
+
+    // FIR Filter Instances
+    fir_filter filter_voltage (
+        .clk(clk), .reset(reset), .data_in(voltage_raw), .data_out(voltage_filtered)
+    );
+
+    fir_filter filter_current (
+        .clk(clk), .reset(reset), .data_in(current_raw), .data_out(current_filtered)
+    );
+
+    // UART Transmission
+    always @(posedge clk) begin
+        uart_data <= {voltage_filtered[7:0], current_filtered[7:0], relay_status};
+        send_uart <= 1'b1;
+    end
+
+    uart_tx uart (
+        .clk(clk), .reset(reset), .data_in(uart_data), .send(send_uart), .tx(tx)
+    );
+
+endmodule  
