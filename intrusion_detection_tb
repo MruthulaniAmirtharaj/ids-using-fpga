@@ -1,0 +1,66 @@
+module intrusion_detection_tb;
+    
+    // Testbench signals
+    reg         clk;
+    reg         reset;
+    reg         miso;
+    reg         relay_status;
+    wire        cs;
+    wire        sclk;
+    wire        mosi;
+    wire        tx;
+
+    // Instantiate the top-level module (Unit Under Test)
+    intrusion_detection uut (
+        .clk(clk),
+        .reset(reset),
+        .miso(miso),
+        .relay_status(relay_status),
+        .cs(cs),
+        .sclk(sclk),
+        .mosi(mosi),
+        .tx(tx)
+    );
+
+    // Clock Generation: 50 MHz (20 ns period)
+    initial begin
+        clk = 0;
+        forever #10 clk = ~clk;
+    end
+
+    // Reset Generation: Assert reset initially for 100 ns then deassert.
+    initial begin
+        reset = 1;
+        #100;
+        reset = 0;
+    end
+
+    // Relay Status: Toggle the relay status at specific simulation times.
+    initial begin
+        relay_status = 0;     // Initially off
+        #5000;                // After 5 us, turn on the relay
+        relay_status = 1;
+        #5000;                // After another 5 us, turn off
+        relay_status = 0;
+    end
+
+    // MISO Simulation:
+    // For this testbench, we generate a simple toggling pattern on miso.
+    // In a real application, the ADC would drive MISO according to its conversion.
+    initial begin
+        miso = 0;
+    end
+
+    // Toggle miso on every falling edge of sclk to simulate ADC data shifting.
+    // This is a simple approximation. For a more realistic simulation,
+    // you might use a more complex pattern or drive miso from a dedicated ADC test module.
+    always @(negedge sclk) begin
+        miso = ~miso;
+    end
+
+    // Simulation Duration: Stop the simulation after an appropriate interval.
+    initial begin
+        #200000;  // Run simulation for 200,000 ns (200 us)
+    end
+
+endmodule
