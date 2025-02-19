@@ -1,0 +1,47 @@
+module fir_filter_tb;
+    reg clk;
+    reg reset;
+    reg [9:0] data_in;
+    wire [9:0] data_out;
+
+    // Instantiate FIR Filter
+    fir_filter uut (
+        .clk(clk),
+        .reset(reset),
+        .data_in(data_in),
+        .data_out(data_out)
+    );
+
+    // Clock Generation (50MHz = 20ns period)
+    always #10 clk = ~clk;
+
+    initial begin
+        // Initialize signals
+        clk = 0;
+        reset = 1;
+        data_in = 0;
+        
+        #50 reset = 0; // Release reset
+        #20;
+
+        // Apply test input values with sufficient delay
+        data_in = 10;  #40;
+        data_in = 20;  #40;
+        data_in = 30;  #40;
+        data_in = 40;  #40;
+        data_in = 50;  #40;
+        data_in = 60;  #40;
+        data_in = 70;  #40;
+        data_in = 80;  #40;
+        data_in = 90;  #40;
+        data_in = 100; #40;
+
+        #200;
+    end
+
+    // Monitor output values
+    initial begin
+        $monitor("Time = %0t | Data_in = %d | Data_out (Filtered) = %d", 
+                 $time, data_in, data_out);
+    end
+endmodule
